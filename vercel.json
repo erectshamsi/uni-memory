@@ -1,1 +1,6 @@
-{"functions":{"api/**/*.js":{"runtime":"nodejs20.x"}},"rewrites":[{"source":"/admin","destination":"/admin.html"},{"source":"/hami","destination":"/hami.html"}]}
+{
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/hami", "destination": "/hami.html" }
+  ]
+}
