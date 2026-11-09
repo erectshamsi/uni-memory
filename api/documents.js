@@ -13,19 +13,10 @@ module.exports = async (req, res) => {
   if (req.method === "POST") {
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
     const existing = getDocuments().find(d => d.id === body.id);
-
-    const contentText = body.content || body.text || existing?.content || "";
-    const docLink = body.link !== undefined ? body.link : (existing?.link || "");
-    const docCode = body.code !== undefined ? body.code : (existing?.code || "");
-
     const doc = upsertDocument({
       id: body.id,
       title: body.title ?? existing?.title,
-      code: docCode,
-      link: docLink,
-      content: docLink && !contentText.includes(docLink) 
-        ? `${contentText}\n\nلینک بخشنامه در سایت دانشگاه: ${docLink}` 
-        : contentText,
+      content: body.content ?? existing?.content,
       status: body.status ?? existing?.status ?? "approved",
       validity: body.validity ?? existing?.validity ?? "current",
       source: body.source ?? existing?.source ?? "admin"
