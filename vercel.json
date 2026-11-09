@@ -1,6 +1,8 @@
 {
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/admin-ec-9842", "destination": "/admin.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin.html", "destination": "/index.html" },
     { "source": "/hami", "destination": "/hami.html" }
   ]
 }
