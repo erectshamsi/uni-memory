@@ -1,0 +1,1 @@
+{"name":"uni-memory-vercel","version":"1.0.0","private":true,"description":"Persian university circulars assistant for Vercel","engines":{"node":">=18"},"scripts":{"start":"node -e \"console.log('Deploy with Vercel')\""}}

@@ -1,0 +1,2 @@
+const {answer}=require('./_lib/engine');
+module.exports=async function(req,res){if(req.method!=='POST')return res.status(405).json({error:'POST required'});try{const {question,role}=req.body||{};if(typeof question!=='string'||!question.trim())return res.status(400).json({error:'پرسش را وارد کنید.'});if(question.length>4000)return res.status(413).json({error:'حداکثر طول پرسش ۴۰۰۰ نویسه است.'});res.status(200).json(await answer(question.trim(),role||'همه'));}catch(e){console.error(e);res.status(500).json({error:'خطای موقت؛ دوباره تلاش کنید.'})}};
