@@ -1,22 +1,56 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>پنل مدیریت منابع</title><style>body{font-family:tahoma;padding:20px;line-height:1.6}form{max-width:600px;margin:auto;display:flex;flex-direction:column;gap:10px}input,textarea,select{padding:10px;border:1px solid #ccc}button{padding:10px;background:#0056b3;color:#fff;border:none;cursor:pointer}</style></head><body>
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <title>پنل مدیریت</title>
+    <style>
+        body { font-family: Tahoma, 'Segoe UI', sans-serif; background-color: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
+        form { width: 100%; max-width: 600px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 15px; }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        input, textarea, select { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        button { padding: 14px; background: #0056b3; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #004494; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
 <form id="adminForm">
     <h2>مدیریت منابع</h2>
     <input type="password" id="pass" placeholder="رمز مدیریت" required>
     <input type="text" id="title" placeholder="عنوان سند" required>
     <input type="text" id="code" placeholder="کد سند">
-    <input type="url" id="link" placeholder="لینک مستقیم بخشنامه در سایت دانشگاه (اختیاری)">
-    <textarea id="text" rows="10" placeholder="متن استخراج‌شده"></textarea>
-    <select id="status"><option value="تأییدشده">معتبر (تأییدشده)</option><option value="در انتظار">در انتظار</option></select>
+    <input type="url" id="link" placeholder="لینک مستقیم بخشنامه (اختیاری)">
+    <textarea id="text" rows="8" placeholder="متن استخراج‌شده"></textarea>
+    <select id="status">
+        <option value="تأییدشده">تأییدشده</option>
+        <option value="در انتظار">در انتظار</option>
+    </select>
     <button type="submit">افزودن / ذخیره منبع</button>
+    <hr>
+    <button type="button" onclick="setupWebhook()" style="background:#28a745">تنظیم وب‌هوک بله</button>
 </form>
-<hr>
-<div style="text-align:center">
-    <button onclick="fetch('/api/bale',{method:'POST',headers:{'x-password':document.querySelector('#pass').value}}).then(alert('وب‌هوک ست شد'))">تنظیم وب‌هوک بله</button>
-</div>
+
 <script>
-document.querySelector('#adminForm').onsubmit=async e=>{e.preventDefault();
-let data={password:document.querySelector('#pass').value,title:document.querySelector('#title').value,code:document.querySelector('#code').value,link:document.querySelector('#link').value,text:document.querySelector('#text').value,status:document.querySelector('#status').value};
-let r=await fetch('/api/documents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-alert(r.ok?'با موفقیت ذخیره شد':'خطا: رمز اشتباه است یا مشکلی پیش آمده');
+async function setupWebhook() {
+    let p = document.querySelector('#pass').value;
+    let r = await fetch('/api/bale', { method:'POST', headers:{'x-password': p} });
+    alert(r.ok ? 'وب‌هوک با موفقیت تنظیم شد' : 'خطا در تنظیم وب‌هوک');
+}
+
+document.querySelector('#adminForm').onsubmit = async e => {
+    e.preventDefault();
+    let data = {
+        password: document.querySelector('#pass').value,
+        title: document.querySelector('#title').value,
+        code: document.querySelector('#code').value,
+        link: document.querySelector('#link').value,
+        text: document.querySelector('#text').value,
+        status: document.querySelector('#status').value
+    };
+    let r = await fetch('/api/documents', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+    alert(r.ok ? 'با موفقیت ذخیره شد' : 'خطا در ذخیره‌سازی');
 };
-</script></body></html>
+</script>
+</body>
+</html>
