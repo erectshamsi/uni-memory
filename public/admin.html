@@ -1,56 +1,218 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="utf-8">
-    <title>پنل مدیریت</title>
-    <style>
-        body { font-family: Tahoma, 'Segoe UI', sans-serif; background-color: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
-        form { width: 100%; max-width: 600px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 15px; }
-        h2 { text-align: center; color: #333; margin-top: 0; }
-        input, textarea, select { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-        button { padding: 14px; background: #0056b3; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
-        button:hover { background: #004494; }
-        hr { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>مدیریت منابع | حافظه سازمانی دانشگاه</title>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body, input, textarea, select, button {
+      font-family: 'Vazirmatn', Tahoma, sans-serif !important;
+    }
+    .doc-link {
+      display: inline-block;
+      margin-top: 6px;
+      color: #1d4ed8;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .doc-link:hover { text-decoration: underline; }
+  </style>
 </head>
 <body>
+  <header class="topbar">
+    <div class="wrap nav">
+      <div class="brand">حافظه سازمانی دانشگاه</div>
+      <nav class="navlinks">
+        <a href="/">صفحه گفتگو</a>
+      </nav>
+    </div>
+  </header>
 
-<form id="adminForm">
-    <h2>مدیریت منابع</h2>
-    <input type="password" id="pass" placeholder="رمز مدیریت" required>
-    <input type="text" id="title" placeholder="عنوان سند" required>
-    <input type="text" id="code" placeholder="کد سند">
-    <input type="url" id="link" placeholder="لینک مستقیم بخشنامه (اختیاری)">
-    <textarea id="text" rows="8" placeholder="متن استخراج‌شده"></textarea>
-    <select id="status">
-        <option value="تأییدشده">تأییدشده</option>
-        <option value="در انتظار">در انتظار</option>
-    </select>
-    <button type="submit">افزودن / ذخیره منبع</button>
-    <hr>
-    <button type="button" onclick="setupWebhook()" style="background:#28a745">تنظیم وب‌هوک بله</button>
-</form>
+  <main class="wrap narrow">
+    <h1>مدیریت منابع و بخشنامه‌ها</h1>
+    <p class="muted">بخشنامه‌های رسمی دانشگاه را به همراه لینک مستقیم آن‌ها در این بخش ثبت و مدیریت کنید.</p>
 
-<script>
-async function setupWebhook() {
-    let p = document.querySelector('#pass').value;
-    let r = await fetch('/api/bale', { method:'POST', headers:{'x-password': p} });
-    alert(r.ok ? 'وب‌هوک با موفقیت تنظیم شد' : 'خطا در تنظیم وب‌هوک');
-}
+    <section class="card form">
+      <label>عنوان بخشنامه یا سند
+        <input id="title" placeholder="مثلاً: ارائه درس دانش خانواده در نیمسال اول" />
+      </label>
 
-document.querySelector('#adminForm').onsubmit = async e => {
-    e.preventDefault();
-    let data = {
-        password: document.querySelector('#pass').value,
-        title: document.querySelector('#title').value,
-        code: document.querySelector('#code').value,
-        link: document.querySelector('#link').value,
-        text: document.querySelector('#text').value,
-        status: document.querySelector('#status').value
+      <label>کد یا شماره سند
+        <input id="code" placeholder="مثلاً: d1997401" />
+      </label>
+
+      <label>لینک مستقیم بخشنامه در سایت دانشگاه (اختیاری)
+        <input id="link" dir="ltr" placeholder="https://ec.iau.ir/..." />
+      </label>
+
+      <label>بارگذاری فایل (TXT, PDF, DOCX) — اختیاری
+        <input id="fileInput" type="file" accept=".txt,.pdf,.docx" />
+      </label>
+
+      <label>متن بخشنامه (جهت مطالعه و استناد هوش مصنوعی)
+        <textarea id="content" rows="7" placeholder="متن کامل یا خلاصه دقیق بخشنامه را اینجا بنویسید یا از فایل بارگذاری کنید..."></textarea>
+      </label>
+
+      <div class="grid2">
+        <label>وضعیت بررسی
+          <select id="status">
+            <option value="approved" selected>تأییدشده (معتبر جهت پاسخگویی)</option>
+            <option value="pending">در انتظار تأیید</option>
+          </select>
+        </label>
+        <label>اعتبار
+          <select id="validity">
+            <option value="current" selected>جاری و معتبر</option>
+            <option value="unknown">نامشخص</option>
+            <option value="superseded">منسوخ</option>
+          </select>
+        </label>
+      </div>
+
+      <button id="saveBtn">افزودن / ذخیره منبع</button>
+      <div id="statusMsg" class="muted"></div>
+
+      <div class="row">
+        <button id="refreshBtn" class="secondary">بازخوانی منابع</button>
+        <button id="exportBtn" class="secondary">خروجی پشتیبان (JSON)</button>
+        <button id="baleBtn" class="secondary">تنظیم وب‌هوک بله</button>
+      </div>
+
+      <div id="docs" class="docs"></div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script>
+    const statusMsg = document.getElementById("statusMsg");
+    const docsEl = document.getElementById("docs");
+    let currentDocs = [];
+
+    document.getElementById("fileInput").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!document.getElementById("title").value) {
+        document.getElementById("title").value = file.name.replace(/\.[^.]+$/, "");
+      }
+      statusMsg.textContent = "در حال استخراج متن فایل...";
+      try {
+        const ext = file.name.split(".").pop().toLowerCase();
+        let text = "";
+        if (ext === "txt") {
+          text = await file.text();
+        } else if (ext === "docx") {
+          const buf = await file.arrayBuffer();
+          const out = await window.mammoth.extractRawText({ arrayBuffer: buf });
+          text = out.value;
+        } else if (ext === "pdf") {
+          const buf = await file.arrayBuffer();
+          const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+          const pages = [];
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const p = await pdf.getPage(i);
+            const c = await p.getTextContent();
+            pages.push(c.items.map(x => x.str).join(" "));
+          }
+          text = pages.join("\n\n");
+        }
+        document.getElementById("content").value = text.trim();
+        statusMsg.textContent = "متن فایل با موفقیت استخراج شد.";
+      } catch (err) {
+        statusMsg.textContent = "خطا در خواندن فایل: " + err.message;
+      }
+    });
+
+    async function loadDocs() {
+      const r = await fetch("/api/documents");
+      const data = await r.json();
+      currentDocs = data.documents || [];
+      docsEl.innerHTML = currentDocs.map(d => `
+        <div class="doc">
+          <div class="doc-head">
+            <div>
+              <strong>${escapeHtml(d.title)}</strong> 
+              ${d.code ? `<span class="muted">(${escapeHtml(d.code)})</span>` : ""}
+              <span class="muted">[${d.status === 'approved' ? 'تأییدشده' : d.status}]</span>
+            </div>
+            <div class="doc-actions">
+              <button class="secondary" onclick="toggleApprove('${d.id}','${d.status}')">${d.status === "approved" ? "لغو تأیید" : "تأیید"}</button>
+              <button class="danger" onclick="removeDoc('${d.id}')">حذف</button>
+            </div>
+          </div>
+          ${d.link ? `<a class="doc-link" href="${escapeHtml(d.link)}" target="_blank">🔗 مشاهده بخشنامه در سایت دانشگاه</a>` : ""}
+          <div class="muted small" style="margin-top:6px">${escapeHtml((d.content || "").slice(0, 220))}...</div>
+        </div>
+      `).join("");
+    }
+
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+    }
+
+    document.getElementById("saveBtn").onclick = async () => {
+      const title = document.getElementById("title").value.trim();
+      const code = document.getElementById("code").value.trim();
+      const link = document.getElementById("link").value.trim();
+      const content = document.getElementById("content").value.trim();
+      const status = document.getElementById("status").value;
+      const validity = document.getElementById("validity").value;
+
+      if (!title || !content) {
+        statusMsg.textContent = "لطفاً عنوان و متن بخشنامه را وارد کنید.";
+        return;
+      }
+
+      statusMsg.textContent = "در حال ذخیره...";
+      const r = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, code, link, content, status, validity })
+      });
+      const data = await r.json();
+      statusMsg.textContent = r.ok ? "✅ بخشنامه با موفقیت ذخیره شد." : ("❌ خطا: " + (data.error || r.status));
+      if (r.ok) {
+        document.getElementById("title").value = "";
+        document.getElementById("code").value = "";
+        document.getElementById("link").value = "";
+        document.getElementById("content").value = "";
+        loadDocs();
+      }
     };
-    let r = await fetch('/api/documents', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
-    alert(r.ok ? 'با موفقیت ذخیره شد' : 'خطا در ذخیره‌سازی');
-};
-</script>
+
+    window.toggleApprove = async (id, status) => {
+      await fetch("/api/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: status === "approved" ? "pending" : "approved" })
+      });
+      loadDocs();
+    };
+
+    window.removeDoc = async (id) => {
+      await fetch("/api/documents?id=" + encodeURIComponent(id), { method: "DELETE" });
+      loadDocs();
+    };
+
+    document.getElementById("refreshBtn").onclick = loadDocs;
+    document.getElementById("exportBtn").onclick = () => {
+      const blob = new Blob([JSON.stringify(currentDocs, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "documents.json";
+      a.click();
+    };
+
+    document.getElementById("baleBtn").onclick = async () => {
+      statusMsg.textContent = "در حال اتصال وب‌هوک بله...";
+      const r = await fetch("/api/setup-bale", { method: "POST" });
+      const data = await r.json();
+      statusMsg.textContent = data.message || JSON.stringify(data);
+    };
+
+    loadDocs();
+  </script>
 </body>
 </html>
