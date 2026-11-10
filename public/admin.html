@@ -53,8 +53,8 @@
         </label>
       </div>
 
-      <button id="saveBtn">افزودن / ذخیره منبع</button>
-      <div id="statusMsg" class="muted"></div>
+      <button id="saveBtn" style="margin-bottom: 24px;">افزودن / ذخیره منبع</button>
+      <div id="statusMsg" class="muted" style="margin-bottom: 16px; font-weight: bold;"></div>
 
       <div class="row">
         <button id="refreshBtn" class="secondary">بازخوانی منابع</button>
@@ -72,22 +72,26 @@
     let currentDocs = [];
 
     async function loadDocs() {
-      const r = await fetch("/api/documents");
-      const data = await r.json();
-      currentDocs = data.documents || [];
-      docsEl.innerHTML = currentDocs.map(d => `
-        <div class="doc">
-          <div class="doc-head">
-            <strong>${escapeHtml(d.title)}</strong>
-            <span class="muted">${escapeHtml(d.status)} / ${escapeHtml(d.validity)}</span>
+      try {
+        const r = await fetch("/api/documents");
+        const data = await r.json();
+        currentDocs = data.documents || [];
+        docsEl.innerHTML = currentDocs.map(d => `
+          <div class="doc">
+            <div class="doc-head">
+              <strong>${escapeHtml(d.title)}</strong>
+              <span class="muted">${escapeHtml(d.status)} / ${escapeHtml(d.validity)}</span>
+            </div>
+            <div class="muted small">${escapeHtml((d.content || "").slice(0, 220))}...</div>
+            <div class="doc-actions">
+              <button class="secondary" onclick="toggleApprove('${d.id}','${d.status}')">${d.status === "approved" ? "لغو تأیید" : "تأیید"}</button>
+              <button class="danger" onclick="removeDoc('${d.id}')">حذف</button>
+            </div>
           </div>
-          <div class="muted small">${escapeHtml((d.content || "").slice(0, 220))}...</div>
-          <div class="doc-actions">
-            <button class="secondary" onclick="toggleApprove('${d.id}','${d.status}')">${d.status === "approved" ? "لغو تأیید" : "تأیید"}</button>
-            <button class="danger" onclick="removeDoc('${d.id}')">حذف</button>
-          </div>
-        </div>
-      `).join("");
+        `).join("");
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     function escapeHtml(s) {
@@ -102,23 +106,42 @@
       const status = document.getElementById("status").value;
       const validity = document.getElementById("validity").value;
 
+      if (!title || !rawContent) {
+        statusMsg.textContent = "لطفاً عنوان و متن بخشنامه را وارد کنید.";
+        statusMsg.style.color = "crimson";
+        return;
+      }
+
+      statusMsg.textContent = "در حال ذخیره...";
+      statusMsg.style.color = "#333";
+
       let finalContent = rawContent;
       if (code) finalContent = `کد سند: ${code}\n` + finalContent;
       if (link) finalContent = finalContent + `\nلینک بخشنامه: ${link}`;
 
-      const r = await fetch("/api/documents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content: finalContent, status, validity })
-      });
-      const data = await r.json();
-      statusMsg.textContent = r.ok ? "منبع با موفقیت ذخیره شد." : ("خطا: " + (data.error || r.status));
-      if (r.ok) {
-        document.getElementById("title").value = "";
-        document.getElementById("code").value = "";
-        document.getElementById("link").value = "";
-        document.getElementById("content").value = "";
-        loadDocs();
+      try {
+        const r = await fetch("/api/documents", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, content: finalContent, status, validity })
+        });
+        const data = await r.json();
+
+        if (r.ok) {
+          statusMsg.textContent = "منبع با موفقیت ذخیره شد.";
+          statusMsg.style.color = "green";
+          document.getElementById("title").value = "";
+          document.getElementById("code").value = "";
+          document.getElementById("link").value = "";
+          document.getElementById("content").value = "";
+          loadDocs();
+        } else {
+          statusMsg.textContent = "خطا در ذخیره: " + (data.error || r.statusText);
+          statusMsg.style.color = "crimson";
+        }
+      } catch (err) {
+        statusMsg.textContent = "خطای ارتباط با سرور: " + err.message;
+        statusMsg.style.color = "crimson";
       }
     };
 
@@ -146,6 +169,7 @@
     };
 
     document.getElementById("baleBtn").onclick = async () => {
+      statusMsg.textContent = "در حال تنظیم وب‌هوک...";
       const r = await fetch("/api/setup-bale", { method: "POST" });
       const data = await r.json();
       statusMsg.textContent = data.message || JSON.stringify(data);
