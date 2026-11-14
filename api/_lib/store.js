@@ -1,15 +1,61 @@
-const fs=require('fs'); const path=require('path');
-const file=path.join(process.cwd(),'data','documents.json');
-async function load(){
- const repo=process.env.GITHUB_REPO, token=process.env.GITHUB_TOKEN;
- if(repo&&token){try{const r=await fetch(`https://api.github.com/repos/${repo}/contents/data/documents.json`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}}); if(r.ok){const j=await r.json();return {docs:JSON.parse(Buffer.from(j.content,'base64').toString('utf8')),sha:j.sha,remote:true}}}catch(e){console.error('GitHub read failed',e.message)}}
- return {docs:JSON.parse(fs.readFileSync(file,'utf8')),remote:false};
+const fs = require("fs");
+const path = require("path");
+
+const SEED_PATH = path.join(process.cwd(), "data", "documents.json");
+const TMP_PATH = "/tmp/uni-memory-documents.json";
+
+function getDocuments() {
+  try {
+    if (fs.existsSync(TMP_PATH)) {
+      return JSON.parse(fs.readFileSync(TMP_PATH, "utf8"));
+    }
+  } catch (e) {}
+  try {
+    if (fs.existsSync(SEED_PATH)) {
+      return JSON.parse(fs.readFileSync(SEED_PATH, "utf8"));
+    }
+  } catch (e) {}
+  return [];
 }
-async function save(docs,sha){const repo=process.env.GITHUB_REPO,token=process.env.GITHUB_TOKEN;if(!repo||!token)return {persistent:false};
- const url=`https://api.github.com/repos/${repo}/contents/data/documents.json`;
- if(!sha){const r=await fetch(url,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'}});if(r.ok)sha=(await r.json()).sha;}
- const body={message:'Update knowledge base from Uni Memory admin',content:Buffer.from(JSON.stringify(docs,null,2)).toString('base64'),...(sha?{sha}:{})};
- const r=await fetch(url,{method:'PUT',headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},body:JSON.stringify(body)});
- if(!r.ok)throw new Error(`GitHub save failed (${r.status}): ${(await r.text()).slice(0,300)}`);return {persistent:true};
+
+function saveDocuments(docs) {
+  try {
+    fs.writeFileSync(TMP_PATH, JSON.stringify(docs, null, 2), "utf8");
+  } catch (e) {}
+  try {
+    fs.writeFileSync(SEED_PATH, JSON.stringify(docs, null, 2), "utf8");
+  } catch (e) {}
+  return docs;
 }
-module.exports={load,save};
+
+function upsertDocument(doc) {
+  const docs = getDocuments();
+  const id = doc.id || "doc-" + Date.now();
+  const idx = docs.findIndex((d) => String(d.id) === String(id));
+  const existing = idx >= 0 ? docs[idx] : {};
+
+  const record = {
+    ...existing,
+    ...doc,
+    id,
+    title: (doc.title ?? existing.title ?? "بدون عنوان").trim(),
+    content: (doc.content ?? existing.content ?? "").trim(),
+    status: doc.status ?? existing.status ?? "approved",
+    validity: doc.validity ?? existing.validity ?? "current",
+    source: doc.source ?? existing.source ?? "admin",
+    updatedAt: new Date().toISOString()
+  };
+
+  if (idx >= 0) docs[idx] = record;
+  else docs.unshift(record);
+
+  saveDocuments(docs);
+  return record;
+}
+
+function deleteDocument(id) {
+  const docs = getDocuments().filter((d) => String(d.id) !== String(id));
+  return saveDocuments(docs);
+}
+
+module.exports = { getDocuments, saveDocuments, upsertDocument, deleteDocument };
